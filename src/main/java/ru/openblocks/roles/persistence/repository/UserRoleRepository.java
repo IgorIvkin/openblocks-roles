@@ -3,9 +3,11 @@ package ru.openblocks.roles.persistence.repository;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import ru.openblocks.roles.persistence.entity.RoleEntity;
 import ru.openblocks.roles.persistence.entity.UserRoleEntity;
 
 import java.util.List;
@@ -22,4 +24,10 @@ public interface UserRoleRepository extends JpaRepository<UserRoleEntity, Long> 
     List<UserRoleEntity> findByUserName(@NotNull @Size(max = 255) String userName);
 
     List<UserRoleEntity> findByGrantBy(@NotNull @Size(max = 255) String grantBy);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(nativeQuery = true,
+            value = "delete from user_role ur where ur.user_name = :userName and ur.role_code = :roleCode")
+    void deleteByUserNameAndRoleCode(@Param("userName") String userName,
+                                     @Param("roleCode") String roleCode);
 }

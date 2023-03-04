@@ -1,11 +1,16 @@
 package ru.openblocks.roles.service.mapper;
 
 import org.springframework.stereotype.Component;
+import ru.openblocks.roles.kafka.dto.userrole.UserRoleMessage;
+import ru.openblocks.roles.kafka.dto.userrole.UserRoleRole;
 import ru.openblocks.roles.persistence.entity.RoleEntity;
 import ru.openblocks.roles.persistence.entity.UserRoleEntity;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class UserRoleMapper {
@@ -18,6 +23,29 @@ public class UserRoleMapper {
                 .roleCode(role)
                 .grantBy(issuerUserName)
                 .createdAt(Instant.now(clock))
+                .build();
+    }
+
+    public UserRoleMessage toUserRoleMessage(String userName, List<UserRoleEntity> userRoles) {
+        return UserRoleMessage.builder()
+                .messageId(UUID.randomUUID())
+                .createdAt(Instant.now(clock))
+                .userName(userName)
+                .roles(toUserRoles(userRoles))
+                .build();
+    }
+
+    private List<UserRoleRole> toUserRoles(List<UserRoleEntity> userRoles) {
+        return userRoles.stream()
+                .map(this::toUserRole)
+                .collect(Collectors.toList());
+    }
+
+    private UserRoleRole toUserRole(UserRoleEntity userRole) {
+        return UserRoleRole.builder()
+                .code(userRole.getRoleCode().getCode())
+                .label(userRole.getRoleCode().getLabel())
+                .createdAt(userRole.getCreatedAt())
                 .build();
     }
 }

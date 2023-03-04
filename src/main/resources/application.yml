@@ -48,13 +48,13 @@ opentracing:
       port: 6831
     enable-b3-propagation: true
 
-app:
-  keycloak-service:
-    client-id: 'admin-cli'
-    client-secret: 'W5jwTHQWUBXYaAgMPTyHwOkwL4A2yB0S'
-    host: http://localhost:8534
-    urls:
-      admin-token: '/realms/infra/protocol/openid-connect/token'
-      create-user: '/admin/realms/infra/users'
-      get-user-by-user-name: '/admin/realms/infra/users?username={username}'
-      update-user: '/admin/realms/infra/users/{id}'
+roles-kafka:
+  replay-changes: true
+  bootstrap-servers: localhost:9092
+  ssl:
+    enabled: false
+    truststore-location: 'stub'
+    truststore-password: 'stub'
+    keystore-location: 'stub'
+    keystore-password: 'stub'
+    key-password: 'stub'

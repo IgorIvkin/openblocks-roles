@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.openblocks.roles.common.SpecialUserRoles;
 import ru.openblocks.roles.exception.RoleNotFoundException;
 import ru.openblocks.roles.exception.UserHasNoRoleException;
+import ru.openblocks.roles.kafka.RolesKafkaSender;
 import ru.openblocks.roles.persistence.entity.RoleEntity;
 import ru.openblocks.roles.persistence.entity.UserRoleEntity;
 import ru.openblocks.roles.persistence.repository.RoleRepository;
@@ -33,15 +34,19 @@ public class UserRoleService {
 
     private final UserRoleMapper userRoleMapper;
 
+    private final RolesKafkaSender rolesKafkaSender;
+
     private UserRoleService userRoleService;
 
     @Autowired
     public UserRoleService(UserRoleRepository userRoleRepository,
                            RoleRepository roleRepository,
-                           UserRoleMapper userRoleMapper) {
+                           UserRoleMapper userRoleMapper,
+                           RolesKafkaSender rolesKafkaSender) {
         this.userRoleRepository = userRoleRepository;
         this.roleRepository = roleRepository;
         this.userRoleMapper = userRoleMapper;
+        this.rolesKafkaSender = rolesKafkaSender;
     }
 
     @Lazy
@@ -86,7 +91,42 @@ public class UserRoleService {
         if (!userRoleService.hasRole(userName, roleCode)) {
             final UserRoleEntity userRole = userRoleMapper.toUserRole(issuerUserName, userName, role);
             userRoleRepository.saveAndFlush(userRole);
+
+            // Отправляем в Кафку снапшот изменений по текущему пользователю
+            rolesKafkaSender.sendRolesSnapshotByUser(userName);
         }
+    }
+
+    /**
+     * Удаляет роль у пользователя. Если у инициатора изменений не хватает прав на удаление ролей,
+     * произойдет ошибка.
+     *
+     * @param principal JWT-токен пользователя, удаляющего роль
+     * @param userName  логин пользователя, у которого удаляется роль
+     * @param roleCode  код роли
+     */
+    @Transactional
+    public void deleteRoleFromUser(Jwt principal, String userName, String roleCode) {
+
+        // Проверяем основные параметры запроса
+        if (Objects.isNull(userName)) {
+            throw new IllegalArgumentException("Cannot delete role, userName is null");
+        }
+        if (Objects.isNull(roleCode)) {
+            throw new IllegalArgumentException("Cannot delete role, code of role is null");
+        }
+
+        // Проверяем, что текущий пользователь имеет право изменять роли пользователей
+        final String issuerUserName = getUserNameFromJwt(principal);
+        log.info("User {} is trying to delete role {} from user {}", issuerUserName, roleCode, userName);
+        if (!userRoleService.isRolesAdministrator(issuerUserName)) {
+            throw new UserHasNoRoleException("User " + issuerUserName + " has no rights to delete roles from users");
+        }
+
+        userRoleRepository.deleteByUserNameAndRoleCode(userName, roleCode);
+
+        // Отправляем в Кафку снапшот изменений по текущему пользователю
+        rolesKafkaSender.sendRolesSnapshotByUser(userName);
     }
 
     /**
