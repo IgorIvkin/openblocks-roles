@@ -1,6 +1,7 @@
 package ru.openblocks.roles.service.mapper;
 
 import org.springframework.stereotype.Component;
+import ru.openblocks.roles.api.dto.userrole.get.response.UserRoleGetResponse;
 import ru.openblocks.roles.kafka.dto.userrole.UserRoleMessage;
 import ru.openblocks.roles.kafka.dto.userrole.UserRoleRole;
 import ru.openblocks.roles.persistence.entity.RoleEntity;
@@ -35,6 +36,21 @@ public class UserRoleMapper {
                 .build();
     }
 
+    public List<UserRoleGetResponse> toUserRolesGetResponse(List<UserRoleEntity> userRoles) {
+        return userRoles.stream()
+                .map(this::toUserRoleGetResponse)
+                .collect(Collectors.toList());
+    }
+
+    private UserRoleGetResponse toUserRoleGetResponse(UserRoleEntity userRole) {
+        return UserRoleGetResponse.builder()
+                .code(userRole.getRoleCode().getCode())
+                .label(userRole.getRoleCode().getLabel())
+                .createdAt(userRole.getCreatedAt())
+                .grantBy(userRole.getGrantBy())
+                .build();
+    }
+
     private List<UserRoleRole> toUserRoles(List<UserRoleEntity> userRoles) {
         return userRoles.stream()
                 .map(this::toUserRole)
@@ -48,4 +64,5 @@ public class UserRoleMapper {
                 .createdAt(userRole.getCreatedAt())
                 .build();
     }
+
 }

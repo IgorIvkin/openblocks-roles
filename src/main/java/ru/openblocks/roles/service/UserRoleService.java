@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.openblocks.roles.api.dto.userrole.get.response.UserRoleGetResponse;
 import ru.openblocks.roles.common.SpecialUserRoles;
 import ru.openblocks.roles.exception.RoleNotFoundException;
 import ru.openblocks.roles.exception.UserHasNoRoleException;
@@ -16,6 +17,7 @@ import ru.openblocks.roles.persistence.repository.RoleRepository;
 import ru.openblocks.roles.persistence.repository.UserRoleRepository;
 import ru.openblocks.roles.service.mapper.UserRoleMapper;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -130,6 +132,19 @@ public class UserRoleService {
     }
 
     /**
+     * Возвращает список ролей пользователя с названиями, датами и идентификаторами тех, кто выдал роль.
+     *
+     * @param userName логин пользователя
+     * @return список ролей пользователя
+     */
+    @Transactional(readOnly = true)
+    public List<UserRoleGetResponse> getRolesByUser(String userName) {
+        log.info("Get roles by user {}", userName);
+        List<UserRoleEntity> userRoles = userRoleRepository.findByUserName(userName);
+        return userRoleMapper.toUserRolesGetResponse(userRoles);
+    }
+
+    /**
      * Проверяет, что у пользователя есть роль, заданная кодом. Пользователь задается его логином - userName.
      *
      * @param userName логин пользователя
@@ -138,6 +153,7 @@ public class UserRoleService {
      */
     @Transactional(readOnly = true)
     public boolean hasRole(String userName, String roleCode) {
+        log.info("Checking that user {} has role {}", userName, roleCode);
         return userRoleRepository.userHasRole(userName, roleCode);
     }
 

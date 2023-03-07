@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import ru.openblocks.roles.api.dto.role.get.request.UserHasRoleRequest;
 import ru.openblocks.roles.api.dto.userrole.create.request.UserRoleCreateRequest;
 import ru.openblocks.roles.api.dto.userrole.delete.request.UserRoleDeleteRequest;
+import ru.openblocks.roles.api.dto.userrole.get.response.UserRoleGetResponse;
 import ru.openblocks.roles.service.UserRoleService;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,6 +20,11 @@ import ru.openblocks.roles.service.UserRoleService;
 public class UserRoleController {
 
     private final UserRoleService userRoleService;
+
+    @GetMapping("/users/{userName}")
+    public List<UserRoleGetResponse> getByUserName(@PathVariable String userName) {
+        return userRoleService.getRolesByUser(userName);
+    }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PostMapping
